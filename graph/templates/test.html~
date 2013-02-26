@@ -1,18 +1,29 @@
 <!DOCTYPE HTML>
 <html>
-
-<canvas id="canvas" width="500" height="400" style="border:1px solid #000000;"></canvas>
+<body  style="background-color:#A8A8A8"></body>
+<center>
+<canvas id="canvas" width="600" height="500" style="border:1px solid #000000;"></canvas>
 <div>
 <input id="clear" type=button value="Clear" >
 <input id="submit" type=button value="Submit" >
 <input id="vertex" type=button value="vertex" onclick="drawEdge = 0" >
 <input id="edge" type=button value="edge" onclick="drawEdge = 1" >
 </div>
-<p id="demo"></p>
+</center>
 <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script>
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
+
+var select = 0;
+var startX;
+var startY;
+var vertexNo = -1;
+var centers = new Array();
+var adjancencyList = new Array();
+var colours = ["red", "green", "blue", "yellow", "pink", "purple", "brown", "voilet"];
+var v ;
+var u ;
 
 clear.addEventListener('click', clearCanvas, false);
 submit.addEventListener('click', colouring, false);
@@ -22,21 +33,6 @@ function clearCanvas() {
     location.reload(); 
 }
 
-document.addEventListener('keydown', function(evt) {
-
-var show = "";
-for (var j = 0 ; j < centers.length ; j++) {
-    if (adjancencyList[j] == undefined)
-        show = show + j + " : " +"no adjancency"+ "<br>";
-    else    
-       show = show + j + " : " + adjancencyList[j] + "<br>"; 
-}
-document.getElementById("demo").innerHTML = show;
-
-}, false);
-
-var colours = ["red", "green", "blue", "yellow", "pink", "purple", "brown", "voilet"];
-
 function colouring() {
   		
 	$.post("/",{data:JSON.stringify(adjancencyList)},function(data){
@@ -44,8 +40,6 @@ function colouring() {
 		 for (i = 0; i < data.length ; i++) {
             var centerX = centers[i][0];
             var centerY = centers[i][1];
-            //var a = data[i]
-            //alert(typeof(a)); 
             context.fillStyle = colours[Number(data[i])];
             createVertex(centerX, centerY);
          }   
@@ -53,9 +47,23 @@ function colouring() {
 }
 
 function getMousePos(canvas, evt) {
+    if (evt.pageX != undefined && evt.pageY != undefined) {
+			var x = evt.pageX;
+			var y = evt.pageY;
+		}
+		
+	else {
+		x = evt.clientX + document.body.scrollLeft +
+				document.documentElement.scrollLeft;
+		y = evt.clientY + document.body.scrollTop +
+				document.documentElement.scrollTop;
+	}
+	x -= canvas.offsetLeft;
+	y -= canvas.offsetTop;
+	
     return {
-        x: evt.clientX,
-        y: evt.clientY
+        x: x,
+        y: y
     };
 }
 
@@ -72,18 +80,9 @@ function createEdge(a, b, c, d) {
     context.moveTo(a, b);
     context.lineTo(c, d);
     context.closePath();
+    context.strokeStyle = 'grey';
     context.stroke();
 }
-
-var select = 0;
-var x1;
-var y1;
-var centers = new Array();
-var egdeNo = 0;
-var adjancencyList = new Array();
-var v ;
-var u ;
-var vertexNo = -1;
 
 function create(evt) { 
     if (drawEdge) {
@@ -97,8 +96,8 @@ function create(evt) {
         
             if (select == 0 && distance < 21) {
                 select = 1;
-                x1 = centerX;
-                y1 = centerY;
+                startX = centerX;
+                startY = centerY;
                 v = i;
                 context.fillStyle = 'grey';
                 createVertex(centerX, centerY);
@@ -107,8 +106,8 @@ function create(evt) {
             
             if (select == 1 && distance < 21) {
                 select = 0;
-                var x2 = centerX;
-                var y2 = centerY;
+                var endX = centerX;
+                var endY = centerY;
                 u = i;
                 if(adjancencyList[v] == undefined) {
                     adjancencyList[v]= new Array();
@@ -126,12 +125,13 @@ function create(evt) {
                 createVertex(centerX, centerY);
             }
         }
-        context.beginPath();
+        createEdge(startX, startY, endX, endY);
+        /*context.beginPath();
         context.moveTo(x1, y1);
         context.lineTo(x2, y2);
         context.closePath();
         context.strokeStyle = 'grey';
-        context.stroke();        
+        context.stroke();*/        
       }
 
 
@@ -139,10 +139,10 @@ function create(evt) {
         var mousePos = getMousePos(canvas, evt);
         context.fillStyle = 'black';
         createVertex(mousePos.x, mousePos.y);
-        var pos = [mousePos.x, mousePos.y];
+        var center = [mousePos.x, mousePos.y];
         vertexNo++;
-        context.fillText(vertexNo ,mousePos.x, mousePos.y-22);
-        centers.push(pos);
+        context.fillText(vertexNo, mousePos.x, mousePos.y-23);
+        centers.push(center);
     }
 }
 </script>
