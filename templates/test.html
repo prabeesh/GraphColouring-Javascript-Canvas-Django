@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<html>
+
+<canvas id="canvas" width="500" height="400" style="border:1px solid #000000;"></canvas>
+<div>
+<input id="clear" type=button value="Clear" >
+<input id="submit" type=button value="Submit" >
+<input id="vertex" type=button value="vertex" onclick="drawEdge = 0" >
+<input id="edge" type=button value="edge" onclick="drawEdge = 1" >
+</div>
+<p id="demo"></p>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var context = canvas.getContext('2d');
+
+clear.addEventListener('click', clearCanvas, false);
+submit.addEventListener('click', colouring, false);
+canvas.addEventListener('click', create, false);
+
+function clearCanvas() {
+    location.reload(); 
+}
+
+document.addEventListener('keydown', function(evt) {
+
+var show = "";
+for (var j = 0 ; j < centers.length ; j++) {
+    if (adjancencyList[j] == undefined)
+        show = show + j + " : " +"no adjancency"+ "<br>";
+    else    
+       show = show + j + " : " + adjancencyList[j] + "<br>"; 
+}
+document.getElementById("demo").innerHTML = show;
+
+}, false);
+
+var colours = ["red", "green", "blue", "yellow", "pink", "purple", "brown", "voilet"];
+
+function colouring() {
+  		
+	$.post("/",{data:JSON.stringify(adjancencyList)},function(data){
+	    data =data.replace(/\[/g,"").replace(/\]/g,"").split(",");
+		 for (i = 0; i < data.length ; i++) {
+            var centerX = centers[i][0];
+            var centerY = centers[i][1];
+            context.fillStyle = colours[Number(data[i])];
+            createVertex(centerX, centerY);
+         }   
+		});
+}
+
+function getMousePos(canvas, evt) {
+    return {
+        x: evt.clientX,
+        y: evt.clientY
+    };
+}
+
+function createVertex(posx, posy) {
+    
+    context.beginPath();
+    context.arc(posx, posy, 20, 0, Math.PI*2, false);
+    context.closePath();
+    context.fill();
+}
+
+function createEdge(a, b, c, d) {
+    context.beginPath();
+    context.moveTo(a, b);
+    context.lineTo(c, d);
+    context.closePath();
+    context.stroke();
+}
+
+var select = 0;
+var x1;
+var y1;
+var centers = new Array();
+var egdeNo = 0;
+var adjancencyList = new Array();
+var v ;
+var u ;
+var vertexNo = -1;
+
+function create(evt) { 
+    if (drawEdge) {
+        var mousePos = getMousePos(canvas, evt);
+        
+        for (i = 0; i < centers.length ; i++) {
+            var centerX = centers[i][0];
+            var centerY = centers[i][1];
+            
+            var distance = Math.sqrt(Math.pow((mousePos.x-centerX),2) + Math.pow((mousePos.y-centerY),2))
+        
+            if (select == 0 && distance < 21) {
+                select = 1;
+                x1 = centerX;
+                y1 = centerY;
+                v = i;
+                context.fillStyle = 'grey';
+                createVertex(centerX, centerY);
+                return;
+            }
+            
+            if (select == 1 && distance < 21) {
+                select = 0;
+                var x2 = centerX;
+                var y2 = centerY;
+                u = i;
+                if(adjancencyList[v] == undefined) {
+                    adjancencyList[v]= new Array();
+                    adjancencyList[v].push(i);
+                }
+                else
+                    adjancencyList[v].push(i);
+                if(adjancencyList[u] == undefined) {
+                    adjancencyList[u]= new Array();
+                    adjancencyList[u].push(v);
+                }    
+                else
+                    adjancencyList[u].push(v);
+              
+                createVertex(centerX, centerY);
+            }
+        }
+        context.beginPath();
+        context.moveTo(x1, y1);
+        context.lineTo(x2, y2);
+        context.closePath();
+        context.strokeStyle = 'grey';
+        context.stroke();        
+      }
+
+
+    else {
+        var mousePos = getMousePos(canvas, evt);
+        context.fillStyle = 'black';
+        createVertex(mousePos.x, mousePos.y);
+        var pos = [mousePos.x, mousePos.y];
+        vertexNo++;
+        context.fillText(vertexNo ,mousePos.x, mousePos.y-22);
+        centers.push(pos);
+    }
+}
+</script>
+</html>
